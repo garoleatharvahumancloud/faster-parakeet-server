@@ -4,11 +4,14 @@ from fastapi.responses import StreamingResponse
 from core.models import ASRJob
 from core.stub_engine import StubEngine
 from utils.formatters import format_response
+from core.parakeet_engine import ParakeetEngine
+
+
 from utils.sse import sse_event
 
 router = APIRouter()   # ✅ THIS WAS MISSING
-engine = StubEngine()
-
+# engine = StubEngine()
+engine = ParakeetEngine()
 
 @router.post("/v1/audio/transcriptions")
 async def transcriptions(

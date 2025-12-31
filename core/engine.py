@@ -1,19 +1,20 @@
 from abc import ABC, abstractmethod
-from typing import AsyncGenerator
-from .models import ASRJob, Segment
+from typing import Iterable, List
+from core.models import Segment
+
 
 class ASREngine(ABC):
-
-    @abstractmethod
-    async def transcribe(self, job: ASRJob):
-        pass
-
-    @abstractmethod
-    async def stream_transcribe(
-        self, job: ASRJob
-    ) -> AsyncGenerator[Segment, None]:
-        pass
-
+    @property
     @abstractmethod
     def supports_streaming(self) -> bool:
-        pass
+        ...
+
+    @abstractmethod
+    def transcribe(self, pcm16: bytes) -> List[Segment]:
+        ...
+
+    @abstractmethod
+    def stream_transcribe(
+        self, pcm16_iter: Iterable[bytes]
+    ) -> Iterable[Segment]:
+        ...
