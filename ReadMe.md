@@ -1,3 +1,4 @@
+```
 faster-parakeet-server/
 ├─ .venv/                    # Python virtual environment (DO NOT push)
 ├─ main.py                   # Entry point for FastAPI server
@@ -14,3 +15,4 @@ faster-parakeet-server/
    ├─ __init__.py
    ├─ formatters.py          # JSON formatting helpers
    └─ sse.py                 # Helper for Server-Sent Events (SSE)
+   ```
