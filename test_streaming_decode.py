@@ -70,7 +70,7 @@ import soundfile as sf
 import numpy as np
 from core.parakeet_stateful_engine import ParakeetStatefulEngine
 
-CHUNK_SEC = 0.2  # 200ms chunks
+CHUNK_SEC = 0.1  # 200ms chunks
 
 def main():
     engine = ParakeetStatefulEngine()
