@@ -24,10 +24,11 @@ def main():
 
         now = time.time() - t0
         print(f"[{now:6.2f}s] {out['partial']}")
-        print("   token_ts(sec):", out["token_timestamps_sec"])
+        print("  words:", out["words"])
 
     print("\n=== FINAL ===")
     print(engine.finalize())
+
 
 if __name__ == "__main__":
     main()
