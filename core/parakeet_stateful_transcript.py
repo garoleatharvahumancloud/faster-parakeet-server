@@ -12,9 +12,8 @@ class ParakeetStatefulEngine:
         model_name="nvidia/parakeet-tdt-0.6b-v3",
         sample_rate=16000,
         device="cuda",
-        max_buffer_sec=8.0,
-        min_update_sec=0.6,
-        stability_threshold=2,   # must repeat N times before commit
+        max_buffer_sec=12.0,
+        min_update_sec=0.5,
     ):
         self.sample_rate = sample_rate
         self.device = device
@@ -28,15 +27,12 @@ class ParakeetStatefulEngine:
         self.audio_buffer = np.zeros((0,), dtype=np.float32)
         self.samples_since_last = 0
 
-        # streaming state
-        self.prev_text = ""
-        self.candidate_text = ""
-        self.candidate_count = 0
-        self.stability_threshold = stability_threshold
+        # committed transcript
+        self.committed_text = ""
 
     @torch.no_grad()
     def process_chunk(self, chunk: np.ndarray):
-        t0 = time.time()
+        start = time.time()
 
         # 1) append audio
         self.audio_buffer = np.concatenate([self.audio_buffer, chunk])
@@ -44,11 +40,12 @@ class ParakeetStatefulEngine:
 
         # 2) trim buffer
         if len(self.audio_buffer) > self.max_samples:
-            self.audio_buffer = self.audio_buffer[-self.max_samples :]
+            self.audio_buffer = self.audio_buffer[-self.max_samples:]
 
         # 3) throttle
         if self.samples_since_last < self.min_update_samples:
             return None
+
         self.samples_since_last = 0
 
         # 4) transcribe
@@ -58,30 +55,26 @@ class ParakeetStatefulEngine:
             return_hypotheses=True,
         )
 
-        text = hyp_to_text(hyps[0]).strip()
+        full_text = hyp_to_text(hyps[0]).strip()
 
-        # 5) stability check
-        if text == self.candidate_text:
-            self.candidate_count += 1
+        # 5) compute delta (NO DROPPED WORDS)
+        if full_text.startswith(self.committed_text):
+            delta = full_text[len(self.committed_text):].strip()
         else:
-            self.candidate_text = text
-            self.candidate_count = 1
+            # RNNT revision → re‑emit everything
+            delta = full_text
 
-        # 6) commit only when stable
-        if self.candidate_count >= self.stability_threshold:
-            if text.startswith(self.prev_text):
-                delta = text[len(self.prev_text):].strip()
-            else:
-                delta = text
+        self.committed_text = full_text
 
-            self.prev_text = text
-            self.candidate_count = 0
+        if not delta:
+            return None
 
-            if delta:
-                return {
-                    "partial": delta,
-                    "full": text,
-                    "latency_sec": round(time.time() - t0, 3),
-                }
+        return {
+            "partial": delta,
+            "full": full_text,
+            "latency_sec": round(time.time() - start, 3),
+        }
 
-        return None
+    def finalize(self):
+        """Call once at end of stream"""
+        return self.committed_text

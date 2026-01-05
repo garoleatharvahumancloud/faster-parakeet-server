@@ -12,19 +12,27 @@ def main():
 
     chunk_size = int(sr * CHUNK_SEC)
 
-    with open("streaming_transcription.txt", "w", encoding="utf-8") as f:
-        print("--- Streaming ASR start ---")
-        t_start = time.time()
+    print("--- Streaming ASR start ---")
+    t0 = time.time()
 
+    with open("streaming_transcription.txt", "w", encoding="utf-8") as f:
         for i in range(0, len(audio), chunk_size):
             chunk = audio[i:i + chunk_size]
             out = engine.process_chunk(chunk)
 
-            if out:
-                t_now = time.time() - t_start
-                print(f"[{t_now:6.2f}s] {out['partial']}")
-                f.write(out["partial"] + " ")
-                f.flush()
+            if out is None:
+                continue
+
+            # SAFE: out is ALWAYS a dict here
+            now = time.time() - t0
+            print(f"[{now:6.2f}s] {out['partial']}")
+            f.write(out["partial"] + " ")
+            f.flush()
+
+        # final commit
+        final_text = engine.finalize()
+        f.write("\n\n=== FINAL TRANSCRIPT ===\n")
+        f.write(final_text)
 
     print("--- Done ---")
 
