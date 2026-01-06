@@ -1,6 +1,6 @@
 ```
 faster-parakeet-server/
-├─ .venv/                    # Python virtual environment (DO NOT push)
+
 ├─ main.py                   # Entry point for FastAPI server
 ├─ requirements.txt          # Python dependencies
 ├─ api/
